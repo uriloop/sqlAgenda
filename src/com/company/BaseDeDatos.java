@@ -61,7 +61,7 @@ public class BaseDeDatos {
             }
         }
 
-        String sql = "SELECT nom, cognom FROM contacte WHERE nom like ? and cognom like ?";
+        String sql = "SELECT nom, cognom FROM contacte WHERE nom=? and cognom=?";
 
         try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
             preparedStatement.setString(1, nom);
@@ -99,7 +99,7 @@ public class BaseDeDatos {
                 cognom+=comanda.charAt(i);
             }
         }
-        String sql = "SELECT * FROM contacte WHERE nom LIKE ? and cognom LIKE ?";
+        String sql = "SELECT * FROM contacte WHERE nom=? collate nocase and cognom=? collate nocase";
         Contacto contacte= new Contacto();
 
         try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
@@ -124,9 +124,10 @@ public class BaseDeDatos {
         Main.print.titol(contacte.telefon,"verd");
         Main.print.titol(contacte.mail,"verd");
 
-        Main.print.titol("Vols esborrar-lo ?","blanc");
+        Main.print.titol("Per eliminar: <elimina>","vermell");
+        Main.print.titol("Per tornar: <anything>","verd");
 
-        if (Main.scan.nextLine().equals("si")){
+        if (Main.scan.nextLine().equals("elimina")){
             eliminaContacte(contacte.nom,contacte.cognom);
         }
 
@@ -153,7 +154,7 @@ public class BaseDeDatos {
 
 
     public void selectContactes() {
-        String sql = "SELECT nom, cognom FROM contacte";
+        String sql = "SELECT nom, cognom FROM contacte order by nom collate nocase";
 
         List<Contacto> llistaContactes = new ArrayList<>();
         try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
@@ -229,32 +230,122 @@ public class BaseDeDatos {
         String busqueda;
         Main.print.titol("Escriu una cadena de caracters a buscar","blanc");
         busqueda=Main.scan.nextLine();
-        busqueda="%"+busqueda+"%";
-        String sql = "SELECT nom, cognom FROM contacte WHERE nom LIKE ? OR cognom LIKE ?";
+        boolean busquedaDoble=false;
+        String nom="";String cognom="";
+        for (int i = 0; i < busqueda.length(); i++) {
 
-        List<Contacto> llistaContactes = new ArrayList<>();
-        try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
-            preparedStatement.setString(1,busqueda);
-            preparedStatement.setString(2,busqueda);
-            ResultSet resultSet  = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                llistaContactes.add(new Contacto(resultSet.getString("nom"), resultSet.getString("cognom")));
+            if(busqueda.charAt(i)==' '){
+                busquedaDoble=true;
+            }else if (!busquedaDoble){
+                nom+=busqueda.charAt(i);
+            }else{
+                cognom+=busqueda.charAt(i);
             }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+        }
+        if (!busquedaDoble){
+            busqueda="%"+busqueda+"%";
+            String sql = "SELECT nom, cognom FROM contacte WHERE nom LIKE ? collate noaccents OR cognom LIKE ? collate noaccents order by nom";
+
+            List<Contacto> llistaContactes = new ArrayList<>();
+            try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
+                preparedStatement.setString(1,busqueda);
+                preparedStatement.setString(2,busqueda);
+                ResultSet resultSet  = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    llistaContactes.add(new Contacto(resultSet.getString("nom"), resultSet.getString("cognom")));
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+
+
+            if (llistaContactes.isEmpty()){
+
+                Main.print.titol("(No hi ha contactes amb aquests parametres de búsqueda)","groc");
+
+            }
+
+            for (Contacto i : llistaContactes){
+                String str=" - "+i.nom+" "+i.cognom;
+                Main.print.titol(str,"verd");
+
+            }
+        }else{
+            nom="%"+nom+"%";
+            cognom="%"+cognom+"%";
+            String sql = "SELECT nom, cognom FROM contacte WHERE nom LIKE ? collate noaccents OR cognom LIKE ? collate noaccents order by nom";
+            List<Contacto> llistaContactes = new ArrayList<>();
+            try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
+                preparedStatement.setString(1,nom);
+                preparedStatement.setString(2,cognom);
+                ResultSet resultSet  = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    llistaContactes.add(new Contacto(resultSet.getString("nom"), resultSet.getString("cognom")));
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+
+
+            if (llistaContactes.isEmpty()){
+
+                Main.print.titol("(No hi ha contactes amb aquests parametres de búsqueda)","groc");
+
+            }
+
+            for (Contacto i : llistaContactes){
+                String str=" - "+i.nom+" "+i.cognom;
+                Main.print.titol(str,"verd");
+
+            }
         }
 
 
-        if (llistaContactes.isEmpty()){
-            Main.print.titol("(No hi ha contactes amb aquests parametres de búsqueda)","groc");
 
+    }
+
+    public void lletres(String comanda) {
+        String abcd="qwertyuiopasdfghjklñzxcvbnmQWERTYUIOPASDFGHJKLÑZXCVBNM";
+        String lletra=comanda;
+        comanda+="%";
+        // comprovem que sigui una lletra
+        boolean hoEs=false;
+        for (int i = 0; i < abcd.length(); i++) {
+            if (abcd.charAt(i)==lletra.charAt(0)){
+                hoEs=true;
+            }
+        }
+        lletra=lletra.toUpperCase();
+        if(hoEs){
+            String sql = "SELECT nom, cognom FROM contacte WHERE nom LIKE ? collate noaccents order by nom";
+
+            List<Contacto> llistaContactes = new ArrayList<>();
+            try (PreparedStatement preparedStatement  = connection.prepareStatement(sql)){
+                preparedStatement.setString(1,comanda);
+                ResultSet resultSet  = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    llistaContactes.add(new Contacto(resultSet.getString("nom"), resultSet.getString("cognom")));
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
+
+
+            if (llistaContactes.isEmpty()){
+
+                Main.print.titol("(No hi ha contactes a la lletra \""+lletra+"\")","groc");
+
+            }
+
+            for (Contacto i : llistaContactes){
+                String str=" - "+i.nom+" "+i.cognom;
+                Main.print.titol(str,"verd");
+
+            }
+        }else{
+            Main.print.titol("Només es permeten lletres  !!!", "vermell");
         }
 
-        for (Contacto i : llistaContactes){
-            String str=" - "+i.nom+" "+i.cognom;
-            Main.print.titol(str,"verd");
-
-        }
 
 
     }

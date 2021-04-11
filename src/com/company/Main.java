@@ -13,8 +13,10 @@ public class Main {
         db.createTables();
         String comanda="llista";
         while ( true){
-            if (comanda.equals("llista")) {
-                print.titol("CONTACTES","verd");
+            if (comanda.length()==1){
+                db.lletres(comanda);
+            }else if (comanda.equals("llista")) {
+                print.titol("  ─────── CONTACTES ───────","groc");
                 db.selectContactes();
             }else if (comanda.equals("busca")){
                 db.buscaContacte();
@@ -30,8 +32,9 @@ public class Main {
                 if (db.existeixContacte(comanda)){
                     db.mostraContacte(comanda);// mostra contacte
                 }else{
-                    print.titol("Comanda erronea. Les comandes son:","groc");
-                    print.titol("apaga, llista, busca, nou   (o el nom i cognom d'un contacte)","groc");
+                    print.titol("Comanda erronea !!!","vermell");
+                    print.titol("Les comandes son:","verd");
+                    print.titol(" <llista> <busca> <nou> <lletra> <nom+ +cognom> <apaga>","verd");
 
                 }
             }
